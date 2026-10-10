@@ -82,6 +82,12 @@ One cohesive existing PR #5; reuse core tooling and existing stdlib tests.
 Account/role mismatch, missing bucket, incompatible IAM or unexpected access/
 cleanup is a stop gate. IAM changes require separate explicit owner approval;
 the dedicated role/trust/policy in docs/M11_S3_VALIDATION.md is proposal only.
+The owner approved the original setup/one-run packet. Account-side evidence now
+confirms Enabled bucket versioning; the same PR prepares exact-version readback,
+permanent run-version cleanup and verification. Approval remains required for
+prefix-scoped ListBucketVersions, GetObjectVersion and DeleteObjectVersion,
+replacing the original key-based actions. No bucket controls change. Do not
+activate the amended IAM policy or proof before that permission delta is approved.
 No static keys, unrelated/admin role, ACL/bucket-policy changes, bucket mutation,
 customer data, recurring execution, deployment, other services or spending scope.
 Review code/trust/permissions and execution control before activation. No cloud

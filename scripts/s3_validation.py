@@ -16,6 +16,7 @@ REPOSITORY = "kcloud1/aws-factory-pilot"
 SUBJECT = "repo:kcloud1@59551122/aws-factory-pilot@1413576774:ref:refs/heads/main"
 PREFIX = "factory-pilot-validation/m11/"
 ROLE_NAME = "factory-pilot-m11-s3-validation"
+BUCKET = "sync-demo-dev-333438771545-sg"
 
 
 class ValidationError(Exception):
@@ -107,8 +108,7 @@ def authenticate(env, executable):
 
 
 def validate_s3(aws, bucket, key, payload, directory, receipt):
-    if (not re.fullmatch(r"[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]", bucket)
-            or ".." in bucket or re.fullmatch(r"[0-9.]+", bucket)
+    if (bucket != BUCKET
             or not re.fullmatch(re.escape(PREFIX) + r"[0-9]{1,20}\.txt", key)
             or not 0 < len(payload) < 256):
         raise ValidationError("RESOURCE_SCOPE_MISMATCH")
@@ -120,13 +120,27 @@ def validate_s3(aws, bucket, key, payload, directory, receipt):
     location = aws.call("s3api", "get-bucket-location", owned).get("LocationConstraint")
     versioning = aws.call("s3api", "get-bucket-versioning", owned).get("Status")
     flags = ("BlockPublicAcls", "IgnorePublicAcls", "BlockPublicPolicy", "RestrictPublicBuckets")
-    if not all(access.get(flag) is True for flag in flags) or location != REGION or versioning:
+    if not all(access.get(flag) is True for flag in flags) or location != REGION or versioning != "Enabled":
         raise ValidationError("BUCKET_PRIVACY_REGION_OR_VERSIONING_MISMATCH")
+
+    def versions():
+        listed = aws.call("s3api", "list-object-versions", [*owned, "--prefix", key,
+                         "--max-keys", "1000", "--no-paginate"])
+        if listed.get("IsTruncated"):
+            raise ValidationError("OBJECT_VERSIONS_INCOMPLETE")
+        return ([item for item in listed.get("Versions", []) if item.get("Key") == key],
+                [item for item in listed.get("DeleteMarkers", []) if item.get("Key") == key])
+
+    def valid_version(value):
+        return isinstance(value, str) and 0 < len(value) <= 1024 and value != "null"
+
+    existing, markers = versions()
+    if existing or markers:
+        raise ValidationError("EXISTING_OBJECT_HISTORY_UNTOUCHED")
     receipt["bucket_check"] = "PASS"
-    etag = None
+    version_id = None
     put_attempted = False
     collision = False
-    unexpected_version = False
     try:
         put_attempted = True
         receipt["write"] = "UNCONFIRMED"
@@ -136,40 +150,48 @@ def validate_s3(aws, bucket, key, payload, directory, receipt):
         except AwsError as error:
             collision = error.code in ("PreconditionFailed", "ConditionalRequestConflict", "412", "409")
             raise
+        version_id = response.get("VersionId")
+        if not valid_version(version_id):
+            version_id = None
+            raise ValidationError("OBJECT_METADATA_UNEXPECTED")
+        receipt["version_id"] = version_id
+        # Persist the exact cleanup identifier even if the runner is interrupted.
+        print("M11_OBJECT_VERSION=" + version_id, flush=True)
         etag = response.get("ETag")
-        unexpected_version = bool(response.get("VersionId"))
-        if not etag or unexpected_version:
+        if not etag:
             raise ValidationError("OBJECT_METADATA_UNEXPECTED")
         receipt["write"] = "PASS"
-        metadata = aws.call("s3api", "get-object", [*object_args, "--if-match", etag, str(target)])
-        if target.read_bytes() != payload or metadata.get("ServerSideEncryption") != "AES256":
+        metadata = aws.call("s3api", "get-object", [*object_args, "--version-id", version_id,
+                            "--if-match", etag, str(target)])
+        if (target.read_bytes() != payload or metadata.get("ServerSideEncryption") != "AES256"
+                or metadata.get("VersionId") != version_id):
             raise ValidationError("OBJECT_READBACK_MISMATCH")
         receipt["readback"] = "PASS"
     finally:
         if put_attempted and not collision:
             receipt["cleanup"] = "FAIL"
-            if unexpected_version:
-                raise ValidationError("UNEXPECTED_VERSION_CLEANUP_REQUIRES_REVIEW")
-            if not etag:
+            if not version_id:
                 # Reconcile an uncertain upload before touching the key. A foreign
                 # object's contents never authorize deletion; the payload has a nonce.
-                try:
-                    metadata = aws.call("s3api", "get-object", [*object_args, str(target)])
-                except AwsError as error:
-                    if error.code not in ("NoSuchKey", "404", "NotFound"):
-                        raise
-                else:
-                    if target.read_bytes() != payload or metadata.get("VersionId"):
+                candidates, markers = versions()
+                if markers or len(candidates) > 1:
+                    raise ValidationError("UNCERTAIN_UPLOAD_NOT_OWNED")
+                if candidates:
+                    candidate_id = candidates[0].get("VersionId")
+                    if not valid_version(candidate_id):
                         raise ValidationError("UNCERTAIN_UPLOAD_NOT_OWNED")
-                    etag = metadata.get("ETag")
-                    if not etag:
+                    metadata = aws.call("s3api", "get-object", [*object_args, "--version-id", candidate_id, str(target)])
+                    if target.read_bytes() != payload or metadata.get("VersionId") != candidate_id:
                         raise ValidationError("UNCERTAIN_UPLOAD_NOT_OWNED")
-            if etag:
-                # Conditional deletion refuses a replacement object at the same key.
-                aws.call("s3api", "delete-object", [*object_args, "--if-match", etag])
-            listed = aws.call("s3api", "list-objects-v2", [*owned, "--prefix", key,
-                                                         "--max-keys", "1", "--no-paginate"])
-            if any(item.get("Key") == key for item in listed.get("Contents", [])):
+                    version_id = candidate_id
+                    receipt["version_id"] = version_id
+                    print("M11_OBJECT_VERSION=" + version_id, flush=True)
+            if version_id:
+                # Delete only our immutable version; never issue a key-only delete
+                # that would create a delete marker or affect another writer.
+                aws.call("s3api", "delete-object", [*object_args, "--version-id", version_id])
+            remaining, markers = versions()
+            if remaining or markers:
                 raise ValidationError("OBJECT_DELETION_UNVERIFIED")
             receipt["cleanup"] = "PASS"
         elif collision:

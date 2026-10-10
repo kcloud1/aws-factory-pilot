@@ -54,10 +54,11 @@ jobs:
         run: |
           python3 scripts/core_toolkit.py --factory-dir _m11_factory --install core --prefix "$M11_TOOL_PREFIX"
           python3 scripts/core_toolkit.py --factory-dir _m11_factory --check core --prefix "$M11_TOOL_PREFIX"
-      - name: OIDC, private bucket, marker readback and cleanup
+      - name: OIDC, existing private bucket object proof and cleanup
         timeout-minutes: 5
         env:
           AWS_CLI_EXE: ${{ runner.temp }}/m11-core/bin/aws
           M11_AWS_ROLE_ARN: ${{ secrets.M11_AWS_ROLE_ARN }}
+          M11_S3_BUCKET: ${{ vars.M11_S3_BUCKET }}
           APPROVED_SHA: ${{ inputs.approved_sha }}
         run: python3 scripts/s3_validation.py

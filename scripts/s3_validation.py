@@ -9,13 +9,13 @@ import subprocess
 import tempfile
 import urllib.parse
 import urllib.request
-import uuid
 
 ACCOUNT = "333438771545"
 REGION = "ap-southeast-1"
 REPOSITORY = "kcloud1/aws-factory-pilot"
 SUBJECT = "repo:kcloud1@59551122/aws-factory-pilot@1413576774:ref:refs/heads/main"
-KEY = "validation.txt"
+PREFIX = "factory-pilot-validation/m11/"
+ROLE_NAME = "factory-pilot-m11-s3-validation"
 
 
 class ValidationError(Exception):
@@ -31,7 +31,7 @@ class AwsError(ValidationError):
 class AwsCli:
     def __init__(self, executable, credentials=None):
         self.executable = executable
-        self.env = {k: v for k, v in os.environ.items() if not k.startswith("AWS_")}
+        self.env = {k: v for k, v in os.environ.items() if not k.startswith("AWS_") and k not in ("ACTIONS_ID_TOKEN_REQUEST_TOKEN", "ACTIONS_ID_TOKEN_REQUEST_URL")}
         self.env.update(AWS_CONFIG_FILE="/dev/null", AWS_SHARED_CREDENTIALS_FILE="/dev/null",
                         AWS_EC2_METADATA_DISABLED="true", AWS_MAX_ATTEMPTS="1",
                         AWS_STS_REGIONAL_ENDPOINTS="regional")
@@ -62,7 +62,7 @@ def context(env):
     if not re.fullmatch(r"[0-9a-f]{40}", sha) or env.get("APPROVED_SHA") != sha:
         raise ValidationError("APPROVED_SHA_MISMATCH")
     role = env.get("M11_AWS_ROLE_ARN", "")
-    if not re.fullmatch(r"arn:aws:iam::333438771545:role/[A-Za-z0-9_+=,.@/-]+", role):
+    if role != f"arn:aws:iam::{ACCOUNT}:role/{ROLE_NAME}":
         raise ValidationError("APPROVED_ROLE_MISSING_OR_WRONG_ACCOUNT")
     run_id = env.get("GITHUB_RUN_ID", "")
     if not re.fullmatch(r"[0-9]{1,20}", run_id) or env.get("GITHUB_RUN_ATTEMPT") != "1":
@@ -96,7 +96,7 @@ def authenticate(env, executable):
     check_claims(token)
     # Read the token from stdin, never process arguments, disk, logs or artifacts.
     response = AwsCli(executable).call("sts", "assume-role-with-web-identity",
-        ["--role-arn", role, "--role-session-name", session, "--role-duration-seconds", "900",
+        ["--role-arn", role, "--role-session-name", session, "--duration-seconds", "900",
          "--web-identity-token", "file:///dev/stdin"], input_text=token)
     aws = AwsCli(executable, response["Credentials"])
     identity = aws.call("sts", "get-caller-identity")
@@ -106,63 +106,87 @@ def authenticate(env, executable):
     return aws
 
 
-def validate_s3(aws, bucket, payload, directory, receipt):
-    if not re.fullmatch(r"factory-pilot-m11-[0-9a-f]{24}", bucket) or len(payload) > 256:
+def validate_s3(aws, bucket, key, payload, directory, receipt):
+    if (not re.fullmatch(r"[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]", bucket)
+            or ".." in bucket or re.fullmatch(r"[0-9.]+", bucket)
+            or not re.fullmatch(re.escape(PREFIX) + r"[0-9]{1,20}\.txt", key)
+            or not 0 < len(payload) < 256):
         raise ValidationError("RESOURCE_SCOPE_MISMATCH")
     owned = ["--bucket", bucket, "--expected-bucket-owner", ACCOUNT]
-    created = False
-    put_attempted = False
-    version = None
+    object_args = [*owned, "--key", key]
     source, target = directory / "source.txt", directory / "readback.txt"
     source.write_bytes(payload)
+    access = aws.call("s3api", "get-public-access-block", owned)["PublicAccessBlockConfiguration"]
+    location = aws.call("s3api", "get-bucket-location", owned).get("LocationConstraint")
+    versioning = aws.call("s3api", "get-bucket-versioning", owned).get("Status")
+    flags = ("BlockPublicAcls", "IgnorePublicAcls", "BlockPublicPolicy", "RestrictPublicBuckets")
+    if not all(access.get(flag) is True for flag in flags) or location != REGION or versioning:
+        raise ValidationError("BUCKET_PRIVACY_REGION_OR_VERSIONING_MISMATCH")
+    receipt["bucket_check"] = "PASS"
+    etag = None
+    put_attempted = False
+    collision = False
+    unexpected_version = False
     try:
-        receipt["create"] = "UNCONFIRMED"
-        aws.call("s3api", "create-bucket", ["--bucket", bucket, "--create-bucket-configuration",
-                                           json.dumps({"LocationConstraint": REGION})])
-        created = True
-        receipt["create"] = "PASS"
-        access = aws.call("s3api", "get-public-access-block", owned)["PublicAccessBlockConfiguration"]
-        ownership = aws.call("s3api", "get-bucket-ownership-controls", owned)["OwnershipControls"]["Rules"]
-        location = aws.call("s3api", "get-bucket-location", owned).get("LocationConstraint")
-        flags = ("BlockPublicAcls", "IgnorePublicAcls", "BlockPublicPolicy", "RestrictPublicBuckets")
-        if (not all(access.get(key) is True for key in flags)
-                or ownership != [{"ObjectOwnership": "BucketOwnerEnforced"}] or location != REGION):
-            raise ValidationError("BUCKET_PRIVACY_OR_REGION_MISMATCH")
-        receipt["privacy"] = "PASS"
         put_attempted = True
-        response = aws.call("s3api", "put-object", [*owned, "--key", KEY, "--body", str(source),
-                                                    "--if-none-match", "*", "--server-side-encryption", "AES256"])
-        version = response.get("VersionId")
+        receipt["write"] = "UNCONFIRMED"
+        try:
+            response = aws.call("s3api", "put-object", [*object_args, "--body", str(source),
+                "--if-none-match", "*", "--server-side-encryption", "AES256"])
+        except AwsError as error:
+            collision = error.code in ("PreconditionFailed", "ConditionalRequestConflict", "412", "409")
+            raise
+        etag = response.get("ETag")
+        unexpected_version = bool(response.get("VersionId"))
+        if not etag or unexpected_version:
+            raise ValidationError("OBJECT_METADATA_UNEXPECTED")
         receipt["write"] = "PASS"
-        version_args = ["--version-id", version] if version else []
-        metadata = aws.call("s3api", "get-object", [*owned, "--key", KEY, *version_args, str(target)])
+        metadata = aws.call("s3api", "get-object", [*object_args, "--if-match", etag, str(target)])
         if target.read_bytes() != payload or metadata.get("ServerSideEncryption") != "AES256":
             raise ValidationError("OBJECT_READBACK_MISMATCH")
         receipt["readback"] = "PASS"
     finally:
-        if created:
+        if put_attempted and not collision:
             receipt["cleanup"] = "FAIL"
-            if put_attempted:
-                version_args = ["--version-id", version] if version else []
-                aws.call("s3api", "delete-object", [*owned, "--key", KEY, *version_args])
-            # Never force-empty a bucket or touch another key on cleanup.
-            aws.call("s3api", "delete-bucket", owned)
-            try:
-                aws.call("s3api", "head-bucket", owned)
-            except AwsError as error:
-                if error.code not in ("404", "NoSuchBucket", "NotFound"):
-                    raise
-            else:
-                raise ValidationError("BUCKET_DELETION_UNVERIFIED")
+            if unexpected_version:
+                raise ValidationError("UNEXPECTED_VERSION_CLEANUP_REQUIRES_REVIEW")
+            if not etag:
+                # Reconcile an uncertain upload before touching the key. A foreign
+                # object's contents never authorize deletion; the payload has a nonce.
+                try:
+                    metadata = aws.call("s3api", "get-object", [*object_args, str(target)])
+                except AwsError as error:
+                    if error.code not in ("NoSuchKey", "404", "NotFound"):
+                        raise
+                else:
+                    if target.read_bytes() != payload or metadata.get("VersionId"):
+                        raise ValidationError("UNCERTAIN_UPLOAD_NOT_OWNED")
+                    etag = metadata.get("ETag")
+                    if not etag:
+                        raise ValidationError("UNCERTAIN_UPLOAD_NOT_OWNED")
+            if etag:
+                # Conditional deletion refuses a replacement object at the same key.
+                aws.call("s3api", "delete-object", [*object_args, "--if-match", etag])
+            listed = aws.call("s3api", "list-objects-v2", [*owned, "--prefix", key,
+                                                         "--max-keys", "1", "--no-paginate"])
+            if any(item.get("Key") == key for item in listed.get("Contents", [])):
+                raise ValidationError("OBJECT_DELETION_UNVERIFIED")
             receipt["cleanup"] = "PASS"
+        elif collision:
+            receipt["cleanup"] = "NOT_NEEDED_EXISTING_OBJECT_UNTOUCHED"
 
 
 def main():
-    bucket = "factory-pilot-m11-" + uuid.uuid4().hex[:24]
-    receipt = dict(identity="NOT_RUN", create="NOT_RUN", privacy="NOT_RUN", write="NOT_RUN",
-                   readback="NOT_RUN", cleanup="NOT_RUN", result="FAIL", bucket=bucket,
+    bucket = os.environ.get("M11_S3_BUCKET", "")
+    run_id = os.environ.get("GITHUB_RUN_ID", "")
+    key = PREFIX + run_id + ".txt"
+    receipt = dict(identity="NOT_RUN", bucket_check="NOT_RUN", write="NOT_RUN",
+                   readback="NOT_RUN", cleanup="NOT_RUN", result="FAIL", key=key,
                    sha=os.environ.get("GITHUB_SHA", ""))
     try:
+        context(os.environ)
+        if not bucket:
+            raise ValidationError("APPROVED_BUCKET_NOT_CONFIGURED")
         executable = os.environ["AWS_CLI_EXE"]
         version = subprocess.run([executable, "--version"], capture_output=True, text=True, check=True)
         if not version.stdout.startswith("aws-cli/2.37.12 "):
@@ -170,10 +194,11 @@ def main():
         aws = authenticate(os.environ, executable)
         receipt["identity"] = "PASS"
         # Preserve the exact test resource for recovery if the runner is interrupted.
-        print("M11_BUCKET_NAME=" + bucket, flush=True)
+        print("M11_OBJECT_KEY=" + key, flush=True)
         with tempfile.TemporaryDirectory(prefix="m11-s3-") as temporary:
-            payload = ("M11 S3 validation " + receipt["sha"] + "\n").encode()
-            validate_s3(aws, bucket, payload, Path(temporary), receipt)
+            payload = ("M11 S3 validation " + run_id + " " + receipt["sha"] + " "
+                       + os.urandom(16).hex() + "\n").encode()
+            validate_s3(aws, bucket, key, payload, Path(temporary), receipt)
         receipt["result"] = "PASS"
     except Exception as error:
         # Raw HTTP/CLI errors may contain credentials/identifiers; expose only safe codes.

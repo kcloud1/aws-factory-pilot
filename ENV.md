@@ -38,15 +38,17 @@ No provider operations, credentials, secrets or spending. Existing unrelated
 runtime bindings are not used. GitHub repository access serves source/PR evidence
 only, never deployment. Pinned cloud install, repeated checks and binary reuse passed; see receipts.
 
-## M11 planned provider validation
+## M11 provider validation — pending gates
 
-Execution plane: GitHub Actions + OIDC (developer cloud stays credential-free).
-Selected personal non-PROD account: 333438771545; Region: ap-southeast-1.
-Current actual STS/account and GitHub provider read-only discovery: PASS.
-Pilot OIDC binding: BLOCKED; neither of the two discovered GitHub roles trusts
-this repository. No IAM change is authorized. Private role-ARN binding would be
-repository secret M11_AWS_ROLE_ARN after approved existing-role verification.
-No AWS static keys are needed. Actions runner reuses the exact factory core
-installer/version pins independently of the retained developer cache.
-S3 write/readback/cleanup: NOT_RUN. See docs/M11_S3_VALIDATION.md and factory #13.
-This section does not declare the managed environment binding or AWS proof PASS.
+Execution: GitHub Actions + OIDC; developer cloud remains credential-free.
+Target: personal non-PROD 333438771545, ap-southeast-1.
+Exact dedicated role candidate: factory-pilot-m11-s3-validation; IAM approval
+is separate. Prior Issue #13 discovery found no compatible pilot role; current
+AWS role metadata cannot be inspected by this attached runtime.
+Approved existing private LAB bucket: selection delegated by owner, not yet
+verified from inventory. Repository variable M11_S3_BUCKET and private role
+secret M11_AWS_ROLE_ARN are required before activation; enumeration is denied
+by the GitHub integration, so presence is unverified. Never use static keys.
+Object prefix: factory-pilot-validation/m11/; no bucket changes.
+OIDC/write/readback/cleanup: NOT_RUN. See docs/M11_S3_VALIDATION.md.
+Software READY does not imply provider/IAM/bucket readiness.

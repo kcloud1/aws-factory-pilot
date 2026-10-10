@@ -28,7 +28,14 @@ pin="48ab0ffa8d5615822d6ab99c516709c42f1070b1"
 if ! python3 "$factory/scripts/aws_toolkit.py" --check core --prefix "$prefix" >/dev/null 2>&1; then
   fail 3 "M6_CORE_CHECK=FAIL: pinned versions unavailable; see docs/ENV_PROFILE.md"
 fi
-printf '%s\n' "M6_CORE_CHECK=PASS" "M7_INSTALL_PROOF=REUSED"
+# The prefix-aware version check does not activate binaries in this task's PATH.
+# Fail if a caller would invoke an unpinned system gh/aws after this check.
+for tool in aws gh; do
+  selected="$(command -v "$tool" || true)"
+  [[ "$selected" == "$prefix/bin/$tool" ]] || \
+    fail 3 "M6_CORE_PATH=FAIL: $tool is not active from the pinned core prefix; activate the task-local PATH per docs/CLOUD_SETUP.md"
+done
+printf '%s\n' "M6_CORE_CHECK=PASS" "M6_CORE_PATH=PASS" "M7_INSTALL_PROOF=REUSED"
 
 # Explicit nonzero failure if the focused suite is missing or broken.
 if ! (cd "$root" && python3 - <<'PY'

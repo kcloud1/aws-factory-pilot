@@ -28,7 +28,7 @@ No Node/framework, Terraform, SSM, Amplify or Docker dependency.
 - **Required readiness command:** `bash scripts/check-env.sh`; it fails if `aws`/`gh` on the calling task's PATH are not the pinned prefix.
 - **Readiness:** `CHECKOUT_IDENTITY=PASS`, `M6_CORE_CHECK=PASS`, `M6_CORE_PATH=PASS` and `FUNCTIONAL_CHECK=PASS`. The shell command alone cannot prove managed environment selection.
 - **Optional profiles:** `cloudops` and `app-dev` are `NOT_RUN`; AWS provider access and deployments `NOT_AUTHORIZED`.
-- **Fresh-task proof:** [M8 Issue #3](https://github.com/kcloud1/aws-factory-pilot/issues/3) — pending one real new task. M7 install/reuse evidence must not be repeated as fresh-task proof.
+- **Fresh-task proof:** [M8 acceptance receipt](https://github.com/kcloud1/aws-factory-pilot/issues/3#issuecomment-6102395140) — complete; [PR #4](https://github.com/kcloud1/aws-factory-pilot/pull/4) merged at `ee0a50a9012acb54e093e394b0d66bf03027bfc1`. One actual new-task checker execution passed with retained tools. Binding evidence was owner-observed product UI; runtime metadata binding remained unverified. No repeat of M7 installation proof is required.
 
 ## Cloud / Credentials
 

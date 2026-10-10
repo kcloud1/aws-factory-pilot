@@ -45,8 +45,8 @@ Target: personal non-PROD 333438771545, ap-southeast-1.
 Exact dedicated role candidate: factory-pilot-m11-s3-validation; IAM approval
 is separate. Prior Issue #13 discovery found no compatible pilot role; current
 AWS role metadata cannot be inspected by this attached runtime.
-Approved existing private LAB bucket: selection delegated by owner, not yet
-verified from inventory. Repository variable M11_S3_BUCKET and private role
+Selected existing LAB bucket: sync-demo-dev-333438771545-sg (owner reports
+empty; ownership/region/privacy/versioning are not yet independently verified). Repository variable M11_S3_BUCKET and private role
 secret M11_AWS_ROLE_ARN are required before activation; enumeration is denied
 by the GitHub integration, so presence is unverified. Never use static keys.
 Object prefix: factory-pilot-validation/m11/; no bucket changes.

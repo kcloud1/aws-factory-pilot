@@ -3,8 +3,10 @@
 [Factory Issue #13](https://github.com/kcloud1/cloud-app-factory/issues/13) owns
 this proof. The owner's latest GO supersedes the earlier temporary-bucket design:
 **no bucket creation/deletion**, no ACL/policy changes, and no unrelated objects.
-The owner subsequently delegated selection of any suitable existing private LAB
-bucket. That delegation is not permission to invent a name or bypass identity.
+The owner supplied the existing, reportedly empty bucket
+`sync-demo-dev-333438771545-sg`. Use it for final preparation; no temporary new
+bucket is proposed. Ownership, location, private controls and versioning still
+require read-only verification before activation.
 
 ## Exact execution
 
@@ -14,8 +16,8 @@ Unique key: `factory-pilot-validation/m11/<GITHUB_RUN_ID>.txt`. Run attempts oth
 than 1 are rejected; a new run must not be dispatched after an uncertain result
 without reconciliation. A GitHub rerun is not another proof opportunity.
 
-Use an existing private, never-versioned general-purpose LAB bucket with no
-customer data in the test prefix. Read account/role and bucket metadata before
+Selected bucket: `sync-demo-dev-333438771545-sg`. It must be a private,
+never-versioned general-purpose LAB bucket with no customer data in the prefix. Read account/role and bucket metadata before
 activation. The selected bucket is bound in non-secret repository variable
 `M11_S3_BUCKET`; the exact dedicated role ARN is bound privately in repository
 secret `M11_AWS_ROLE_ARN`. No static keys. This PR does not set either binding.
@@ -70,8 +72,8 @@ pilot. These are **prior evidence**, not fresh AWS IAM inspection by this task.
 The current attached cloud has no AWS connection in its identity manifest and no
 AWS inspection connector. Repository variable/secret enumeration returns 403;
 that does not prove bindings are absent. No bucket inventory was available.
-Bucket selection remains pending usable read-only metadata, not an unanswered
-owner preference. No AWS API was called from this developer cloud.
+Owner selection now resolves the bucket name. Its emptiness is owner-reported;
+current ownership/region/privacy/versioning metadata remains unverified. No AWS API was called from this developer cloud.
 
 ## Small dedicated IAM proposal — NOT executed
 
@@ -98,9 +100,9 @@ Trust proposal:
 }
 ```
 
-One inline-policy proposal below is intentionally non-deployable until
-`APPROVED_LAB_BUCKET` is replaced with the selected, verified bucket. Review
-current SCPs/boundaries and bucket controls; do not widen permissions on denial.
+The exact inline-policy proposal below targets only the owner-supplied bucket.
+It is review material, not an IAM approval or executed attachment. Verify current
+SCPs/boundaries and bucket controls; do not widen permissions on denial.
 The three object actions are restricted to that bucket/test prefix. Additional
 read-only bucket permissions are solely for owner/region/privacy/versioning and
 cleanup verification; no CreateBucket, DeleteBucket or policy/ACL permissions.
@@ -112,23 +114,23 @@ cleanup verification; no CreateBucket, DeleteBucket or policy/ACL permissions.
     {
       "Effect": "Allow",
       "Action": ["s3:GetBucketLocation", "s3:GetBucketPublicAccessBlock", "s3:GetBucketVersioning"],
-      "Resource": "arn:aws:s3:::APPROVED_LAB_BUCKET",
+      "Resource": "arn:aws:s3:::sync-demo-dev-333438771545-sg",
       "Condition": {"StringEquals": {"s3:ResourceAccount": "333438771545"}, "Bool": {"aws:SecureTransport": "true"}}
     },
     {
       "Effect": "Allow", "Action": "s3:ListBucket",
-      "Resource": "arn:aws:s3:::APPROVED_LAB_BUCKET",
+      "Resource": "arn:aws:s3:::sync-demo-dev-333438771545-sg",
       "Condition": {"StringEquals": {"s3:ResourceAccount": "333438771545"},
         "StringLike": {"s3:prefix": "factory-pilot-validation/m11/*"}, "Bool": {"aws:SecureTransport": "true"}}
     },
     {
       "Effect": "Allow", "Action": "s3:PutObject",
-      "Resource": "arn:aws:s3:::APPROVED_LAB_BUCKET/factory-pilot-validation/m11/*",
+      "Resource": "arn:aws:s3:::sync-demo-dev-333438771545-sg/factory-pilot-validation/m11/*",
       "Condition": {"StringEquals": {"s3:ResourceAccount": "333438771545", "s3:x-amz-server-side-encryption": "AES256"}, "Bool": {"aws:SecureTransport": "true"}}
     },
     {
       "Effect": "Allow", "Action": ["s3:GetObject", "s3:DeleteObject"],
-      "Resource": "arn:aws:s3:::APPROVED_LAB_BUCKET/factory-pilot-validation/m11/*",
+      "Resource": "arn:aws:s3:::sync-demo-dev-333438771545-sg/factory-pilot-validation/m11/*",
       "Condition": {"StringEquals": {"s3:ResourceAccount": "333438771545"}, "Bool": {"aws:SecureTransport": "true"}}
     }
   ]

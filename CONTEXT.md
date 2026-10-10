@@ -15,10 +15,11 @@ Status: INITIALIZED
 - Accepted bootstrap intent: intent/0001-project-bootstrap/intent.md.
 - Issue: https://github.com/kcloud1/aws-factory-pilot/issues/1
 - Milestone: M7 core adoption and fictional inventory proof.
-- PR: pending publication; use owning Issue for latest state.
-- Blocker: none; required cloud/tool/demo/review gates pending.
+- PR: https://github.com/kcloud1/aws-factory-pilot/pull/2 (terminal state in GitHub).
+- Blocker: none; cloud binding, pinned core and mock validation passed.
 
 ## Next Action / Restart
 
-Follow AGENTS.md and the owning Issue/PR. Complete M7 gates within SPEC;
-retain cloud evidence in docs/evidence, not this recovery index.
+Follow AGENTS.md and the owning Issue/PR for final review/merge disposition.
+M7 cloud proof is in docs/evidence/M7_CLOUD.md. Any next provider/hosting work
+needs a separate bounded intent; no deployment is selected.

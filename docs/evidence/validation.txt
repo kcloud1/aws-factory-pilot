@@ -1,0 +1,9 @@
+test_cli_reproducible_and_rejects_nonfictional_file (test_inventory.InventoryTests.test_cli_reproducible_and_rejects_nonfictional_file) ... ok
+test_example_outcomes (test_inventory.InventoryTests.test_example_outcomes) ... ok
+test_invalid_and_nonfictional_inputs (test_inventory.InventoryTests.test_invalid_and_nonfictional_inputs) ... ok
+test_order_independent_and_remediation_example (test_inventory.InventoryTests.test_order_independent_and_remediation_example) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.071s
+
+OK

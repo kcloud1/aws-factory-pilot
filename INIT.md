@@ -1,6 +1,6 @@
 # Initialization
 
-Status: NOT_INITIALIZED
+Status: INITIALIZED
 
 Use this file only for first-time repository setup or when Amit explicitly asks to reinitialize the project.
 

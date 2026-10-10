@@ -1,61 +1,57 @@
 # Specification
 
-Status: DRAFT
-Context: `<PERSONAL | WORK>`
-Environment: `<LOCAL | LAB | DEV | NONPROD | PROD>`
+Status: ACTIVE
+Context: PERSONAL
+Environment: Codex Cloud, fictional offline demonstration
+Authority: [accepted M7 intent](intent/0001-project-bootstrap/intent.md),
+[Issue #1](https://github.com/kcloud1/aws-factory-pilot/issues/1), owner GO.
 
-## Objective
+## Objective / Outcome
 
-Describe the problem and intended result.
-
-## Outcome
-
-Describe the usable milestone/release package to deliver.
+Initialize this starter-based repository and prove pinned M6 core tooling in a
+real repository-bound managed cloud task. Deliver one useful fictional inventory
+report and one cohesive reviewable PR. Deployment target: NONE.
 
 ## Authorized
 
-List the actions that may proceed without repeated approval while this SPEC is ACTIVE and the owning Issue/instruction remains in scope.
-
-For `PERSONAL` + `LAB`/`DEV`, explicitly authorized deterministic work may include repo-owned implementation, deployment, cloud resource creation/mutation, validation, reset, and cleanup without asking resource-by-resource.
-
-For `WORK` and especially `PROD`, grant only the bounded authority actually intended. Read-only investigation may be standing authority when explicitly stated; mutation requires proportionate approval in this SPEC or the current user instruction.
-
-Repository visibility is not an authority signal. Private does not mean personal; public does not mean unrestricted.
+Repository-owned documentation, implementation, focused validation, task-owned
+software installation of core, GitHub PR/evidence publication, and review/merge
+only after the acceptance gates below pass. Retrieve shared factory read-only at
+48ab0ffa8d5615822d6ab99c516709c42f1070b1. Keep PATH changes task-local.
 
 ## MUST
 
-- List required behavior and acceptance-critical invariants.
+- Match kcloud1/aws-factory-pilot, its owning Issue and the cloud checkout.
+- Run plan core, explicit install core, then check core twice with exact versions.
+- AWS CLI 2.37.12 and gh 2.102.0; isolated /workspace/tooling/m7-core prefix.
+- Fictional-only JSON/Markdown inventory with example findings and planned actions.
+- Actual cloud task/environment receipt plus exact candidate revision and checks.
+- Preserve repo-starter governance; no copied SDK tree or awsops repository.
 
 ## MUST NOT
 
-- List hard scope, security, data, publication, production, destructive, or cost boundaries.
+No AWS credentials/authentication/API calls/resources/spend. No Terraform,
+SSM or Amplify installation/operation; no IAM/OIDC, DEV/PROD, provider release,
+Cloudflare, network/VPN changes or secret use. Examples are account 333438771545,
+region ap-southeast-1 only. No writes to repo-starter, awsops, factory-pilot or
+cloud-app-factory. GitHub publication is limited to this public-safe project.
 
-## Phases / Milestones
+## Phases / Verification
 
-Group related work into a cohesive useful package, normally several tightly coupled tasks or 2-3 phases sharing one outcome and trust boundary.
+1. Verify binding and record accepted intent/initialize contracts.
+2. Plan/install/check pinned core; develop fictional deterministic demo.
+3. Focused fixture, invalid-input and repeatability checks; publish receipt/PR;
+   review the full diff against Issue #1 and merge only on acceptance.
 
-- Phase 1: `<outcome>`
-- Phase 2: `<outcome>`
-- Phase 3: `<outcome>`
+Issue #1 is the sufficient ordered execution plan; no duplicate change plan.
+Rollback: revert the cohesive PR. Tooling remains in its dedicated environment
+prefix; cache reset requires repeat installation/check. No shared cleanup.
 
-Do not stop between routine approved phases merely to request permission again.
+## Stop Gates / Acceptance
 
-## Verification
-
-State the smallest meaningful proof: focused tests/checks, runtime/provider readback, user-path validation, and cleanup/retention state when applicable.
-
-## Stop Gates
-
-Stop and ask only when required by a real boundary, for example:
-
-- target repository/account/environment does not match the approved scope;
-- work would enter PROD or another higher-risk environment without authority;
-- destructive/non-recoverable data loss, credential/secret mutation, public exposure, or material cost is not explicitly approved;
-- implementation would materially widen architecture, security/trust boundary, or external integration beyond the milestone;
-- required validation fails or current state is ambiguous/unsafe.
-
-Technical failure remains a blocker even when mutation is otherwise authorized.
-
-## Acceptance
-
-List concise conditions that make the whole milestone reviewable and complete.
+Stop for one genuine binding/access/environment/permission blocker, unavailable
+pinned tools, failed required validation or widened authority. Do not substitute
+local CLI or GitHub Actions for cloud proof. INIT=INITIALIZED; accepted intent;
+REAL_CODEX_CLOUD_TASK=PASS; exact versions and repeated check PASS; MOCK_APP=PASS;
+public-safe full-diff review and applicable GitHub checks pass. Governing rules
+are preserved; this SPEC only instantiates the owner's explicitly approved bounds.

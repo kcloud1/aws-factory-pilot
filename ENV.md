@@ -18,6 +18,17 @@ Dedicated prefix: /workspace/tooling/m7-core; task PATH:
 /workspace/tooling/m7-core/bin. [Setup/recovery](docs/ENV_PROFILE.md).
 No Node/framework, Terraform, SSM, Amplify or Docker dependency.
 
+## Codex Cloud Development Setup — M8
+
+- **Setup state:** `CONFIGURED_PROFILE`; required profile: M6 `core` only (already installed and proven in M7).
+- **Repository/binding:** `kcloud1/aws-factory-pilot`, existing managed Codex Cloud environment. Check selected environment's repository via product settings/metadata **independently** of Git root/remote.
+- **Install script:** do not add an M8 installation step. Reuse cached tools; recover missing cache only via [pinned ENV_PROFILE](docs/ENV_PROFILE.md), after verifying identity.
+- **Start skill:** [CLOUD_SETUP](docs/CLOUD_SETUP.md); no services, listeners or provider authentication required.
+- **Required readiness command:** `bash scripts/check-env.sh`.
+- **Readiness:** `CHECKOUT_IDENTITY=PASS`, `M6_CORE_CHECK=PASS` and `FUNCTIONAL_CHECK=PASS`. The shell command alone cannot prove managed environment selection.
+- **Optional profiles:** `cloudops` and `app-dev` are `NOT_RUN`; AWS provider access and deployments `NOT_AUTHORIZED`.
+- **Fresh-task proof:** [M8 Issue #3](https://github.com/kcloud1/aws-factory-pilot/issues/3) — pending one real new task. M7 install/reuse evidence must not be repeated as fresh-task proof.
+
 ## Cloud / Credentials
 
 Deployment target: NONE. AWS profile/authentication: NONE.

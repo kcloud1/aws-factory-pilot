@@ -1,0 +1,10 @@
+{
+  "fictional": true,
+  "account_example": "333438771545",
+  "region": "ap-southeast-1",
+  "resources": [
+    {"id": "demo-web", "service": "ec2", "encrypted": false, "public_access": false, "tags": {"Owner": "fictional-team"}},
+    {"id": "demo-assets", "service": "s3", "encrypted": true, "public_access": true, "tags": {}},
+    {"id": "demo-database", "service": "rds", "encrypted": true, "public_access": false, "tags": {"Owner": "fictional-team"}}
+  ]
+}

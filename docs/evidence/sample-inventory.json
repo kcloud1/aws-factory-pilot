@@ -1,0 +1,64 @@
+{
+  "account_example": "333438771545",
+  "aws_api_calls": "NONE",
+  "deployment_target": "NONE",
+  "fictional": true,
+  "findings": [
+    {
+      "remediation": "Plan an Owner tag after separate authorization.",
+      "resource": "demo-assets",
+      "rule": "owner-tag",
+      "severity": "low",
+      "status": "PLANNED"
+    },
+    {
+      "remediation": "Review access requirements and plan private access after separate authorization.",
+      "resource": "demo-assets",
+      "rule": "public-access",
+      "severity": "high",
+      "status": "PLANNED"
+    },
+    {
+      "remediation": "Plan an encrypted replacement after separate authorization.",
+      "resource": "demo-web",
+      "rule": "encryption",
+      "severity": "medium",
+      "status": "PLANNED"
+    }
+  ],
+  "region": "ap-southeast-1",
+  "remediations_executed": 0,
+  "resources": [
+    {
+      "encrypted": true,
+      "id": "demo-assets",
+      "public_access": true,
+      "service": "s3",
+      "tags": {}
+    },
+    {
+      "encrypted": true,
+      "id": "demo-database",
+      "public_access": false,
+      "service": "rds",
+      "tags": {
+        "Owner": "fictional-team"
+      }
+    },
+    {
+      "encrypted": false,
+      "id": "demo-web",
+      "public_access": false,
+      "service": "ec2",
+      "tags": {
+        "Owner": "fictional-team"
+      }
+    }
+  ],
+  "summary": {
+    "findings": 3,
+    "resources": 3,
+    "resources_with_findings": 2,
+    "resources_without_findings": 1
+  }
+}

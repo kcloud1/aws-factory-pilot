@@ -1,0 +1,27 @@
+{
+  "profile": "core",
+  "platform": "linux-amd64",
+  "prerequisites": {
+    "git": "git version 2.52.0",
+    "python": "3.12.14"
+  },
+  "mode": "check",
+  "tools": {
+    "aws": {
+      "required": "2.37.12",
+      "version": "2.37.12",
+      "pinned": true,
+      "path": "/workspace/tooling/m7-core/bin/aws"
+    },
+    "gh": {
+      "required": "2.102.0",
+      "version": "2.102.0",
+      "pinned": true,
+      "path": "/workspace/tooling/m7-core/bin/gh"
+    }
+  },
+  "actions": {},
+  "aws_auth": "NOT_ATTEMPTED",
+  "aws_resources": "UNTOUCHED",
+  "path_for_this_task": "/workspace/tooling/m7-core/bin"
+}

@@ -37,3 +37,16 @@ Account 333438771545 and region ap-southeast-1 are fictional report context only
 No provider operations, credentials, secrets or spending. Existing unrelated
 runtime bindings are not used. GitHub repository access serves source/PR evidence
 only, never deployment. Pinned cloud install, repeated checks and binary reuse passed; see receipts.
+
+## M11 planned provider validation
+
+Execution plane: GitHub Actions + OIDC (developer cloud stays credential-free).
+Selected personal non-PROD account: 333438771545; Region: ap-southeast-1.
+Current actual STS/account and GitHub provider read-only discovery: PASS.
+Pilot OIDC binding: BLOCKED; neither of the two discovered GitHub roles trusts
+this repository. No IAM change is authorized. Private role-ARN binding would be
+repository secret M11_AWS_ROLE_ARN after approved existing-role verification.
+No AWS static keys are needed. Actions runner reuses the exact factory core
+installer/version pins independently of the retained developer cache.
+S3 write/readback/cleanup: NOT_RUN. See docs/M11_S3_VALIDATION.md and factory #13.
+This section does not declare the managed environment binding or AWS proof PASS.

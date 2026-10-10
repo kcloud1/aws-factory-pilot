@@ -67,3 +67,29 @@ do not install to re-prove M7. No AWS auth/API, IAM, cloud resource/provision,
 VPN/network mutation, Terraform, SSM, Amplify, secrets, spending, deployment
 or cross-repository writes. Repo-only PR may be reviewed now but **cannot be
 merged as M8 complete** before a true new cloud-task readiness receipt.
+
+## M11 continuation — one private S3 validation
+
+Owner approval in the ongoing conversation and
+[factory Issue #13](https://github.com/kcloud1/cloud-app-factory/issues/13)
+supersedes the software-only/no-new-resource limit for this bounded validation.
+Prepare one reviewed PR; reuse the existing pinned core and stdlib test approach.
+AWS write execution is GitHub Actions + OIDC only, one manual run on an explicitly
+approved main SHA, personal non-PROD 333438771545, ap-southeast-1, existing approved
+role with 900-second session. Create one private factory-pilot-m11-<random> bucket,
+write/read one non-secret validation.txt under 256 bytes, and remove only that
+run's created object/bucket. Require actual sanitized provider/cleanup evidence.
+
+No IAM/trust/policy changes, static keys, admin fallback, account switching,
+public access, KMS keys, recurring resource or other service is authorized.
+An incompatible/missing OIDC role is a real stop gate; the proposed narrow role
+in docs/M11_S3_VALIDATION.md is review material, not implementation authority.
+Main is currently unprotected: resolve the execution-control decision and
+independent source/role review before merge/dispatch; exact SHA checks alone
+are not branch protection. Do not claim real pilot cloud binding from a copied
+checkout or connector-authenticated source edit.
+
+Active implementation: scripts/s3_validation.py and one manual workflow.
+Failure after bucket creation must attempt bounded cleanup and report uncertain
+creation/deletion honestly. No adoption, recursive emptying or deletion of an
+existing bucket. Earlier M7/M8 readiness commands remain offline-only.

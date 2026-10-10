@@ -20,6 +20,7 @@ ap-southeast-1 are examples only.
 - [M7 owning Issue](https://github.com/kcloud1/aws-factory-pilot/issues/1)
 - [Accepted intent](intent/0001-project-bootstrap/intent.md) and [SPEC](SPEC.md)
 - [Core tooling setup/recovery](docs/ENV_PROFILE.md) and [cloud proof](docs/evidence/M7_CLOUD.md)
+- [M8 repository-owned startup/readiness](docs/CLOUD_SETUP.md) ([Issue #3](https://github.com/kcloud1/aws-factory-pilot/issues/3))
 - [Four-answer future app intake](docs/APP_INTAKE.md)
 
 Agents start at AGENTS.md; conditional contracts remain SPEC, ENV, CONTEXT,

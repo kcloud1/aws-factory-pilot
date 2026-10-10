@@ -18,6 +18,8 @@ Use this order when the agent has no reliable current context, is recovering fro
 
 If `INIT.md` says `NOT_INITIALIZED`, complete the first-intent bootstrap before significant implementation.
 
+For Codex Cloud onboarding/recovery, follow [project-owned setup](docs/CLOUD_SETUP.md) after the existing intent and read gates. Verify the selected managed environment repository independently of the mounted checkout, run the required checks for this project only, and never infer cloud permissions from installed tools.
+
 ### Intent Gate
 
 For meaningful new work, do not jump from a vague request directly into implementation.
